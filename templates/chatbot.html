@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="DebeekCare Medical Chat Assistant" />
+  <meta name="keywords" content="DebeekCare, Medical Assistant, AI Chatbot, Healthcare, Medical Questions" />
+  <meta name="author" content="DebeekCare Team" />
+  <meta name="theme-color" content="#0d6efd" />
+  <meta name="robots" content="index, follow" />
+  <meta name="msapplication-TileColor" content="#0d6efd" />
+  <meta name="msapplication-TileImage" content="{{ url_for('static', filename='ai.png') }}" />
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+ 
+  <title>DebeekCare Chat</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='ai.png') }}" type="image/png">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='ai.png') }}" type="image/png">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='ai.png') }}" type="image/png">
+  <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='ai.png') }}" type="image/png">
+
+  <!-- social media preview -->
+  <meta property="og:title" content="DebeekCare Chat" />
+  <meta property="og:description" content="Chat with DebeekCare, your AI medical assistant. Get answers to your medical questions." />
+  <meta property="og:image" content="{{ url_for('static', filename='ai.png') }}" />
+  <meta property="og:url" content="{{ url_for('index', _external=True) }}" />
+  <meta property="og:type" content="website" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" >
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Marked.js for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    #chat-box {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .avatar {
+      width: 45px;
+      height: 100%;
+    }
+    .assistant-msg {
+      background-color: rgba(57, 192, 237, 0.2);
+    }
+    #chat1 {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-body {
+      background-color: #f8f9fa;
+      min-height: 70vh;
+    }
+    img.avatar {
+      border-radius: 50%;
+
+    }
+
+
+
+  </style>
+</head>
+<body class="bg-light">
+
+  <section>
+    <div class="container py-5">
+      <div class="row d-flex justify-content-center">
+        <div class="col-md-8 col-lg-6 col-xl-4">
+
+          <div class="card" id="chat1" style="border-radius: 15px;">
+            <div class="card-header d-flex justify-content-between align-items-center p-3 bg-info text-white border-bottom-0"
+                 style="border-top-left-radius: 15px; border-top-right-radius: 15px;">
+              <i class="fas fa-angle-left"></i>
+              <p class="mb-0 fw-bold">
+                <i class="fas fa-user-md"></i>
+                DebeekCare Live AI Chat
+              </p>
+              <i class="fas fa-times" id="reset"></i>
+            </div>
+
+            <div class="card-body" id="chat-box">
+              <div class="d-flex flex-row justify-content-start mb-4">
+                <img src="{{ url_for("static", filename="ai.png") }}"
+                     class="avatar" alt="DebeekCare" />
+                <div class="p-3 ms-3 assistant-msg rounded">
+                  <p class="small mb-0">Hello! I'm <strong>DebeekCare</strong>, your medical assistant. How can I help today?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer border-0">
+              <div class="input-group">
+                <textarea class="form-control bg-body-tertiary" id="user-input" placeholder="Ask a medical question..." rows="1"></textarea>
+                <button class="btn btn-info text-white" onclick="sendMessage()">Send</button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    const aiAvatarUrl = "{{ url_for('static', filename='ai.png') }}";
+  </script>
+  <script>
+    function appendMessage(content, type = 'user') {
+      const avatarURL = type === 'user'
+        ? 'https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava2-bg.webp'
+        : aiAvatarUrl;
+
+      const alignment = type === 'user' ? 'end' : 'start';
+      const bgClass = type === 'user' ? 'border bg-body-tertiary' : 'assistant-msg';
+      const position = type === 'user' ? 'me-3' : 'ms-3';
+
+      const messageHTML = `
+        <div class="d-flex flex-row justify-content-${alignment} mb-4">
+          ${type !== 'user' ? `<img src="${avatarURL}" class="avatar" alt="avatar" />` : ''}
+          <div class="p-3 ${position} ${bgClass} rounded" style="max-width: 75%;">
+            <div class="small mb-0">${content}</div>
+          </div>
+          ${type === 'user' ? `<img src="${avatarURL}" class="avatar" alt="avatar" />` : ''}
+        </div>
+      `;
+
+      $('#chat-box').append(messageHTML);
+      $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+    }
+
+    function get_geo_location(callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            callback({ lat: position.coords.latitude, lon: position.coords.longitude });
+          },
+          function () {
+            callback(null);
+          }
+        );
+      } else {
+        callback(null);
+      }
+    }
+
+    function sendMessage() {
+      const input = $('#user-input');
+      const message = input.val().trim();
+      if (!message) return;
+
+      appendMessage($('<div>').text(message).html(), 'user');
+      input.val('');
+
+      get_geo_location(function (location) {
+        $.ajax({
+          url: "/chat",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ message: message, location: location }),
+          success: function (response) {
+            const parsedReply = marked.parse(response.reply || '');
+            appendMessage(parsedReply, 'assistant');
+          },
+          error: function () {
+            appendMessage("Sorry, I couldn't process your message right now.", 'assistant');
+          }
+        });
+      });
+    }
+  </script>
+  <script>
+    $(document).ready(function () {
+      $('#user-input').on('keypress', function (e) {
+        if (e.which === 13 && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    });
+
+    // #reset send post to /clear
+    $('#reset').on('click', function () {
+      $('#chat-box').empty();
+      appendMessage("Hello! I'm <strong>DebeekCare</strong>, your medical assistant. How can I help today?", 'assistant');
+      $('#user-input').val('');
+      // send a POST request to /clear
+      $.ajax({
+        url: "/clear",
+        method: "POST",
+        success: function () {
+          console.log("Chat cleared");
+        },
+        error: function () {
+          console.error("Error clearing chat");
+        }
+      });
+    });
+    
+
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+          .then(registration => {
+            console.log('ServiceWorker registered: ', registration.scope);
+          })
+          .catch(error => {
+            console.log('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
+  </script>
+
+</body>
+</html>
